@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: picard
+
+server:
+  port: 8080
+
+# Broker MQTT public de test (partage avec tout le monde : prefixe de topics unique obligatoire).
+# Le script du Raspberry (10.21.217.43) doit utiliser le meme broker et le meme prefixe :
+#   sudo python3 picar_mqtt.py --broker test.mosquitto.org --prefix epf-picar-tristan
+picar:
+  broker-url: ${PICAR_BROKER_URL:tcp://test.mosquitto.org:1883}
+  client-id: picard-back
+  topic-prefix: epf-picar-tristan
+
+logging:
+  level:
+    com.epfiot.picard: DEBUG

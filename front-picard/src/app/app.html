@@ -1,0 +1,148 @@
+<header class="top">
+  <div class="brand">
+    <span class="brand-mark">◢</span>
+    <div>
+      <h1>PiCar&nbsp;Pro</h1>
+      <p>Poste de pilotage · TP4 IoT</p>
+    </div>
+  </div>
+
+  <ul class="pills">
+    <li [class.on]="robot.backendUp()"><i></i>Back</li>
+    <li [class.on]="robot.mqttConnected()" [title]="robot.broker()"><i></i>MQTT</li>
+    <li [class.on]="robot.robotOnline()"><i></i>Robot</li>
+    <li class="lat">
+      <span>Latence</span>
+      <b>{{ robot.lastLatency() != null ? (robot.lastLatency() | number: '1.0-0') + ' ms' : '—' }}</b>
+    </li>
+  </ul>
+</header>
+
+@if (!ready()) {
+  <div class="banner">
+    @if (!robot.backendUp()) {
+      Back Spring injoignable : lancez <code>picard</code> sur le port 8080.
+    } @else if (!robot.mqttConnected()) {
+      Back lancé mais broker MQTT injoignable ({{ robot.broker() || '?' }}).
+    } @else {
+      Broker connecté, en attente du robot (lancez <code>picar_mqtt.py</code> sur le Raspberry).
+    }
+  </div>
+}
+
+<main class="grid">
+  <!-- ============ Conduite ============ -->
+  <section class="card drive">
+    <h2>Conduite <small>flèches / ZQSD · espace = stop</small></h2>
+
+    <div class="dpad">
+      <button class="pad up" [class.active]="st()?.direction === 1" (click)="cmd('forward')" aria-label="Avancer">
+        <span>▲</span>Avancer
+      </button>
+      <button class="pad left" [class.active]="st()?.steering === -1" (click)="cmd('left')" aria-label="Gauche">
+        <span>◀</span>Gauche
+      </button>
+      <button class="stop" (click)="cmd('stop')" aria-label="Stop">STOP</button>
+      <button class="pad right" [class.active]="st()?.steering === 1" (click)="cmd('right')" aria-label="Droite">
+        <span>▶</span>Droite
+      </button>
+      <button class="pad down" [class.active]="st()?.direction === -1" (click)="cmd('backward')" aria-label="Reculer">
+        <span>▼</span>Reculer
+      </button>
+    </div>
+
+    <button class="ghost wide" (click)="cmd('center')">Roues droites</button>
+
+    <div class="field">
+      <label for="speed">Vitesse <b>{{ speed() }}</b><span>/ {{ maxSpeed() }}</span></label>
+      <input id="speed" type="range" min="0" [max]="maxSpeed()" step="1" [value]="speed()"
+             (input)="setSpeed($any($event.target).value)" (change)="commitSpeed()" />
+    </div>
+
+    <div class="mode">
+      <div>
+        <span class="lbl">Mode</span>
+        <b>{{ st()?.mode === 'manual' ? 'Manuel' : 'Sécurité' }}</b>
+        <small>{{ st()?.mode === 'manual' ? 'aucun arrêt automatique' : 'arrêt auto si obstacle < 20 cm' }}</small>
+      </div>
+      <button class="switch" role="switch" [attr.aria-checked]="st()?.mode !== 'manual'"
+              [class.on]="st()?.mode !== 'manual'" (click)="toggleMode()" aria-label="Changer de mode">
+        <i></i>
+      </button>
+    </div>
+
+    @if (st()?.safetyStop) {
+      <p class="alert">Arrêt de sécurité : obstacle détecté</p>
+    }
+  </section>
+
+  <!-- ============ Telemetrie ============ -->
+  <section class="card telemetry">
+    <h2>Distance <small>ultrason · 2 Hz</small></h2>
+
+    <div class="dist" [attr.data-level]="distanceLevel()">
+      <span class="value">
+        {{ robot.distance()?.valid ? (robot.distance()?.distanceCm | number: '1.0-1') : '—' }}
+      </span>
+      <span class="unit">cm</span>
+    </div>
+    <div class="gauge" [attr.data-level]="distanceLevel()">
+      <div [style.width.%]="gauge()"></div>
+      <span class="mark" style="left: 10%"></span>
+    </div>
+    <p class="status" [class.bad]="robot.distance() && !robot.distance()!.valid">
+      {{ robot.distance() ? statusLabel[robot.distance()!.status] : 'Aucune mesure reçue' }}
+    </p>
+    <svg class="spark" viewBox="0 0 200 48" preserveAspectRatio="none" aria-hidden="true">
+      <line x1="0" x2="200" y1="41.6" y2="41.6" class="limit" />
+      <path [attr.d]="sparkline()" />
+    </svg>
+
+    <h2 class="sub">Position <small>MPU6050 · m/s²</small></h2>
+    @for (axis of ['x', 'y', 'z']; track axis) {
+      <div class="axis">
+        <span>{{ axis | uppercase }}</span>
+        <div class="track"><div [style.left.%]="bar($any(robot.imu())?.[axis])"></div></div>
+        <b>{{ robot.imu() ? ($any(robot.imu())[axis] | number: '1.2-2') : '—' }}</b>
+      </div>
+    }
+    @if (tilt(); as t) {
+      <p class="angles">Roulis <b>{{ t.roll | number: '1.0-0' }}°</b> · Tangage <b>{{ t.pitch | number: '1.0-0' }}°</b></p>
+    }
+  </section>
+
+  <!-- ============ Camera, lumieres, journal ============ -->
+  <section class="card side">
+    <h2>Caméra <small>pan {{ st()?.pan ?? 90 }}° · tilt {{ st()?.tilt ?? 90 }}°</small></h2>
+    <div class="campad">
+      <button (click)="camera(0, camStep)" class="c-up" aria-label="Caméra haut">▲</button>
+      <button (click)="camera(camStep, 0)" class="c-left" aria-label="Caméra gauche">◀</button>
+      <button (click)="cmd('camera_center')" class="c-mid" aria-label="Centrer la caméra">●</button>
+      <button (click)="camera(-camStep, 0)" class="c-right" aria-label="Caméra droite">▶</button>
+      <button (click)="camera(0, -camStep)" class="c-down" aria-label="Caméra bas">▼</button>
+    </div>
+
+    <h2 class="sub">Lumières</h2>
+    <div class="lights">
+      @for (l of [{ p: 1, n: 'Caméra' }, { p: 2, n: 'Droite' }, { p: 3, n: 'Gauche' }]; track l.p) {
+        <button [class.on]="st()?.lights?.[l.p.toString()]" (click)="light(l.p)">
+          <i></i>{{ l.n }}
+        </button>
+      }
+    </div>
+
+    <h2 class="sub">
+      Latence
+      <small>moy. {{ robot.avgLatency() != null ? (robot.avgLatency() | number: '1.0-1') + ' ms' : '—' }}
+        sur {{ robot.latencies().length }}</small>
+      <button class="link" (click)="robot.resetLatency()">reset</button>
+    </h2>
+    <ol class="log">
+      @for (e of robot.log(); track $index) {
+        <li [attr.data-level]="e.level"><time>{{ e.time }}</time>{{ e.text }}</li>
+      } @empty {
+        <li class="empty">Les accusés de réception du robot s'afficheront ici.</li>
+      }
+    </ol>
+  </section>
+</main>
