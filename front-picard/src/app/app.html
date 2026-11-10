@@ -1,148 +1,192 @@
-<header class="top">
+<mat-toolbar class="top">
   <div class="brand">
-    <span class="brand-mark">◢</span>
+    <!-- Logo original : robot connecte -->
+    <svg class="logo" viewBox="0 0 48 48" aria-hidden="true">
+      <rect width="48" height="48" rx="12" fill="#fff" />
+      <path d="M15 15a13 13 0 0 1 18 0" class="wave" />
+      <path d="M19 19.5a7 7 0 0 1 10 0" class="wave" />
+      <rect x="11" y="24" width="26" height="11" rx="4" class="body" />
+      <circle cx="17" cy="37" r="3.2" class="wheel" />
+      <circle cx="31" cy="37" r="3.2" class="wheel" />
+      <circle cx="18.5" cy="29.5" r="1.8" fill="#fff" />
+      <circle cx="29.5" cy="29.5" r="1.8" fill="#fff" />
+    </svg>
     <div>
-      <h1>PiCar&nbsp;Pro</h1>
-      <p>Poste de pilotage · TP4 IoT</p>
+      <span class="name">Picard</span>
+      <span class="tagline">Pilotage du PiCar-Pro</span>
     </div>
   </div>
 
-  <ul class="pills">
-    <li [class.on]="robot.backendUp()"><i></i>Back</li>
-    <li [class.on]="robot.mqttConnected()" [title]="robot.broker()"><i></i>MQTT</li>
-    <li [class.on]="robot.robotOnline()"><i></i>Robot</li>
-    <li class="lat">
-      <span>Latence</span>
-      <b>{{ robot.lastLatency() != null ? (robot.lastLatency() | number: '1.0-0') + ' ms' : '—' }}</b>
-    </li>
-  </ul>
-</header>
+  <span class="spacer"></span>
+
+  <div class="status">
+    <span class="pill" [class.on]="robot.backendUp()" matTooltip="Back Spring Boot">
+      <mat-icon svgIcon="server" />Back
+    </span>
+    <span class="pill" [class.on]="robot.mqttConnected()" [matTooltip]="robot.broker() || 'Broker MQTT'">
+      <mat-icon svgIcon="cloud" />MQTT
+    </span>
+    <span class="pill" [class.on]="robot.robotOnline()" matTooltip="Script picar_mqtt.py">
+      <mat-icon svgIcon="car" />Robot
+    </span>
+    <span class="pill latency" matTooltip="Commande → accusé de réception du robot">
+      <mat-icon svgIcon="timer" />
+      {{ robot.lastLatency() != null ? (robot.lastLatency() | number: '1.0-0') + ' ms' : '—' }}
+    </span>
+  </div>
+</mat-toolbar>
 
 @if (!ready()) {
-  <div class="banner">
+  <div class="banner" role="status">
     @if (!robot.backendUp()) {
       Back Spring injoignable : lancez <code>picard</code> sur le port 8080.
     } @else if (!robot.mqttConnected()) {
       Back lancé mais broker MQTT injoignable ({{ robot.broker() || '?' }}).
     } @else {
-      Broker connecté, en attente du robot (lancez <code>picar_mqtt.py</code> sur le Raspberry).
+      Broker connecté, en attente du robot : lancez <code>picar_mqtt.py</code> sur le Raspberry.
     }
   </div>
 }
 
 <main class="grid">
   <!-- ============ Conduite ============ -->
-  <section class="card drive">
-    <h2>Conduite <small>flèches / ZQSD · espace = stop</small></h2>
-
-    <div class="dpad">
-      <button class="pad up" [class.active]="st()?.direction === 1" (click)="cmd('forward')" aria-label="Avancer">
-        <span>▲</span>Avancer
-      </button>
-      <button class="pad left" [class.active]="st()?.steering === -1" (click)="cmd('left')" aria-label="Gauche">
-        <span>◀</span>Gauche
-      </button>
-      <button class="stop" (click)="cmd('stop')" aria-label="Stop">STOP</button>
-      <button class="pad right" [class.active]="st()?.steering === 1" (click)="cmd('right')" aria-label="Droite">
-        <span>▶</span>Droite
-      </button>
-      <button class="pad down" [class.active]="st()?.direction === -1" (click)="cmd('backward')" aria-label="Reculer">
-        <span>▼</span>Reculer
-      </button>
-    </div>
-
-    <button class="ghost wide" (click)="cmd('center')">Roues droites</button>
-
-    <div class="field">
-      <label for="speed">Vitesse <b>{{ speed() }}</b><span>/ {{ maxSpeed() }}</span></label>
-      <input id="speed" type="range" min="0" [max]="maxSpeed()" step="1" [value]="speed()"
-             (input)="setSpeed($any($event.target).value)" (change)="commitSpeed()" />
-    </div>
-
-    <div class="mode">
-      <div>
-        <span class="lbl">Mode</span>
-        <b>{{ st()?.mode === 'manual' ? 'Manuel' : 'Sécurité' }}</b>
-        <small>{{ st()?.mode === 'manual' ? 'aucun arrêt automatique' : 'arrêt auto si obstacle < 20 cm' }}</small>
+  <mat-card appearance="outlined" class="drive">
+    <mat-card-header>
+      <mat-card-title>Conduite</mat-card-title>
+      <mat-card-subtitle>Flèches ou ZQSD · Espace = stop</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="dpad">
+        <button mat-stroked-button class="pad up" [class.active]="st()?.direction === 1" (click)="cmd('forward')">
+          <mat-icon svgIcon="up" />Avancer
+        </button>
+        <button mat-stroked-button class="pad left" [class.active]="st()?.steering === -1" (click)="cmd('left')">
+          <mat-icon svgIcon="left" />Gauche
+        </button>
+        <button mat-fab extended class="stop" (click)="cmd('stop')" aria-label="Stop">
+          <mat-icon svgIcon="stop" />STOP
+        </button>
+        <button mat-stroked-button class="pad right" [class.active]="st()?.steering === 1" (click)="cmd('right')">
+          <mat-icon svgIcon="right" />Droite
+        </button>
+        <button mat-stroked-button class="pad down" [class.active]="st()?.direction === -1" (click)="cmd('backward')">
+          <mat-icon svgIcon="down" />Reculer
+        </button>
       </div>
-      <button class="switch" role="switch" [attr.aria-checked]="st()?.mode !== 'manual'"
-              [class.on]="st()?.mode !== 'manual'" (click)="toggleMode()" aria-label="Changer de mode">
-        <i></i>
-      </button>
-    </div>
 
-    @if (st()?.safetyStop) {
-      <p class="alert">Arrêt de sécurité : obstacle détecté</p>
-    }
-  </section>
+      <button mat-button class="center-wheels" (click)="cmd('center')">
+        <mat-icon svgIcon="straight" />Roues droites
+      </button>
+
+      <mat-divider />
+
+      <div class="speed">
+        <div class="speed-head">
+          <mat-icon svgIcon="speed" />
+          <span>Vitesse</span>
+          <b>{{ speed() }}</b><small>/ {{ maxSpeed() }}</small>
+        </div>
+        <mat-slider min="0" [max]="maxSpeed()" step="1" discrete>
+          <input matSliderThumb [value]="speed()" (valueChange)="speed.set($event)" (change)="commitSpeed()" />
+        </mat-slider>
+      </div>
+
+      <div class="mode">
+        <mat-icon svgIcon="shield" [class.on]="safe()" />
+        <div>
+          <b>Mode {{ safe() ? 'sécurité' : 'manuel' }}</b>
+          <small>{{ safe() ? 'Arrêt automatique si obstacle < 20 cm' : 'Aucun arrêt automatique' }}</small>
+        </div>
+        <mat-slide-toggle [checked]="safe()" (change)="setMode($event.checked)" aria-label="Mode sécurité" />
+      </div>
+
+      @if (st()?.safetyStop) {
+        <p class="alert">Arrêt de sécurité : obstacle détecté</p>
+      }
+    </mat-card-content>
+  </mat-card>
 
   <!-- ============ Telemetrie ============ -->
-  <section class="card telemetry">
-    <h2>Distance <small>ultrason · 2 Hz</small></h2>
-
-    <div class="dist" [attr.data-level]="distanceLevel()">
-      <span class="value">
-        {{ robot.distance()?.valid ? (robot.distance()?.distanceCm | number: '1.0-1') : '—' }}
-      </span>
-      <span class="unit">cm</span>
-    </div>
-    <div class="gauge" [attr.data-level]="distanceLevel()">
-      <div [style.width.%]="gauge()"></div>
-      <span class="mark" style="left: 10%"></span>
-    </div>
-    <p class="status" [class.bad]="robot.distance() && !robot.distance()!.valid">
-      {{ robot.distance() ? statusLabel[robot.distance()!.status] : 'Aucune mesure reçue' }}
-    </p>
-    <svg class="spark" viewBox="0 0 200 48" preserveAspectRatio="none" aria-hidden="true">
-      <line x1="0" x2="200" y1="41.6" y2="41.6" class="limit" />
-      <path [attr.d]="sparkline()" />
-    </svg>
-
-    <h2 class="sub">Position <small>MPU6050 · m/s²</small></h2>
-    @for (axis of ['x', 'y', 'z']; track axis) {
-      <div class="axis">
-        <span>{{ axis | uppercase }}</span>
-        <div class="track"><div [style.left.%]="bar($any(robot.imu())?.[axis])"></div></div>
-        <b>{{ robot.imu() ? ($any(robot.imu())[axis] | number: '1.2-2') : '—' }}</b>
+  <mat-card appearance="outlined" class="telemetry">
+    <mat-card-header>
+      <mat-card-title>Distance</mat-card-title>
+      <mat-card-subtitle>Capteur ultrason · 2 Hz</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="dist" [attr.data-level]="distanceLevel()">
+        <span class="value">
+          {{ robot.distance()?.valid ? (robot.distance()?.distanceCm | number: '1.0-1') : '—' }}
+        </span>
+        <span class="unit">cm</span>
       </div>
-    }
-    @if (tilt(); as t) {
-      <p class="angles">Roulis <b>{{ t.roll | number: '1.0-0' }}°</b> · Tangage <b>{{ t.pitch | number: '1.0-0' }}°</b></p>
-    }
-  </section>
+      <mat-progress-bar mode="determinate" [value]="gauge()" [attr.data-level]="distanceLevel()" />
+      <p class="dist-status" [class.bad]="robot.distance() && !robot.distance()!.valid">
+        {{ robot.distance() ? statusLabel[robot.distance()!.status] : 'Aucune mesure reçue' }}
+      </p>
+      <svg class="spark" viewBox="0 0 200 48" preserveAspectRatio="none" aria-hidden="true">
+        <line x1="0" x2="200" y1="41.6" y2="41.6" class="limit" />
+        <path [attr.d]="sparkline()" />
+      </svg>
+
+      <mat-divider />
+
+      <h3>Position <small>MPU6050 · m/s²</small></h3>
+      @for (axis of ['x', 'y', 'z']; track axis) {
+        <div class="axis">
+          <span>{{ axis | uppercase }}</span>
+          <div class="track"><div [style.left.%]="bar(axisValue(axis))"></div></div>
+          <b>{{ axisValue(axis) != null ? (axisValue(axis) | number: '1.2-2') : '—' }}</b>
+        </div>
+      }
+      @if (tilt(); as t) {
+        <p class="angles">Roulis <b>{{ t.roll | number: '1.0-0' }}°</b> · Tangage <b>{{ t.pitch | number: '1.0-0' }}°</b></p>
+      }
+    </mat-card-content>
+  </mat-card>
 
   <!-- ============ Camera, lumieres, journal ============ -->
-  <section class="card side">
-    <h2>Caméra <small>pan {{ st()?.pan ?? 90 }}° · tilt {{ st()?.tilt ?? 90 }}°</small></h2>
-    <div class="campad">
-      <button (click)="camera(0, camStep)" class="c-up" aria-label="Caméra haut">▲</button>
-      <button (click)="camera(camStep, 0)" class="c-left" aria-label="Caméra gauche">◀</button>
-      <button (click)="cmd('camera_center')" class="c-mid" aria-label="Centrer la caméra">●</button>
-      <button (click)="camera(-camStep, 0)" class="c-right" aria-label="Caméra droite">▶</button>
-      <button (click)="camera(0, -camStep)" class="c-down" aria-label="Caméra bas">▼</button>
-    </div>
+  <mat-card appearance="outlined" class="side">
+    <mat-card-header>
+      <mat-card-title>Caméra</mat-card-title>
+      <mat-card-subtitle>Pan {{ st()?.pan ?? 90 }}° · Tilt {{ st()?.tilt ?? 90 }}°</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="campad">
+        <button mat-icon-button class="c-up" (click)="camera(0, camStep)" aria-label="Caméra haut"><mat-icon svgIcon="chev-up" /></button>
+        <button mat-icon-button class="c-left" (click)="camera(camStep, 0)" aria-label="Caméra gauche"><mat-icon svgIcon="chev-left" /></button>
+        <button mat-flat-button class="c-mid" (click)="cmd('camera_center')" aria-label="Centrer la caméra"><mat-icon svgIcon="target" /></button>
+        <button mat-icon-button class="c-right" (click)="camera(-camStep, 0)" aria-label="Caméra droite"><mat-icon svgIcon="chev-right" /></button>
+        <button mat-icon-button class="c-down" (click)="camera(0, -camStep)" aria-label="Caméra bas"><mat-icon svgIcon="chev-down" /></button>
+      </div>
 
-    <h2 class="sub">Lumières</h2>
-    <div class="lights">
-      @for (l of [{ p: 1, n: 'Caméra' }, { p: 2, n: 'Droite' }, { p: 3, n: 'Gauche' }]; track l.p) {
-        <button [class.on]="st()?.lights?.[l.p.toString()]" (click)="light(l.p)">
-          <i></i>{{ l.n }}
+      <mat-divider />
+
+      <h3>Lumières</h3>
+      <mat-button-toggle-group multiple [value]="lightsOn()" class="lights" aria-label="Lumières">
+        @for (l of lightsDef; track l.port) {
+          <mat-button-toggle [value]="l.port" (change)="light(l.port)">
+            <mat-icon svgIcon="bulb" />{{ l.name }}
+          </mat-button-toggle>
+        }
+      </mat-button-toggle-group>
+
+      <mat-divider />
+
+      <h3>
+        Latence
+        <small>moy. {{ robot.avgLatency() != null ? (robot.avgLatency() | number: '1.0-1') + ' ms' : '—' }}
+          sur {{ robot.latencies().length }}</small>
+        <button mat-icon-button class="reset" (click)="robot.resetLatency()" matTooltip="Remettre à zéro" aria-label="Remettre la latence à zéro">
+          <mat-icon svgIcon="refresh" />
         </button>
-      }
-    </div>
-
-    <h2 class="sub">
-      Latence
-      <small>moy. {{ robot.avgLatency() != null ? (robot.avgLatency() | number: '1.0-1') + ' ms' : '—' }}
-        sur {{ robot.latencies().length }}</small>
-      <button class="link" (click)="robot.resetLatency()">reset</button>
-    </h2>
-    <ol class="log">
-      @for (e of robot.log(); track $index) {
-        <li [attr.data-level]="e.level"><time>{{ e.time }}</time>{{ e.text }}</li>
-      } @empty {
-        <li class="empty">Les accusés de réception du robot s'afficheront ici.</li>
-      }
-    </ol>
-  </section>
+      </h3>
+      <ol class="log">
+        @for (e of robot.log(); track $index) {
+          <li [attr.data-level]="e.level"><time>{{ e.time }}</time>{{ e.text }}</li>
+        } @empty {
+          <li class="empty">Les accusés de réception du robot s'afficheront ici.</li>
+        }
+      </ol>
+    </mat-card-content>
+  </mat-card>
 </main>

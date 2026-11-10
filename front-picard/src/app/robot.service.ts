@@ -1,5 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, NgZone, computed, inject, signal } from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 export type Action =
   | 'forward' | 'backward' | 'stop' | 'left' | 'right' | 'center'
@@ -55,6 +56,7 @@ const API = '/api';
 export class RobotService {
   private readonly http = inject(HttpClient);
   private readonly zone = inject(NgZone);
+  private readonly snack = inject(MatSnackBar);
   private source?: EventSource;
 
   readonly backendUp = signal(false);
@@ -151,8 +153,11 @@ export class RobotService {
 
   send(action: Action, params: CommandParams = {}): void {
     this.http.post<{ id: string }>(`${API}/commands`, { action, ...params }).subscribe({
-      error: (e: HttpErrorResponse) =>
-        this.addLog(`Échec ${action} : ${e.error?.error ?? e.statusText ?? 'back injoignable'}`, 'err'),
+      error: (e: HttpErrorResponse) => {
+        const msg = `Échec ${action} : ${e.error?.error ?? e.statusText ?? 'back injoignable'}`;
+        this.addLog(msg, 'err');
+        this.snack.open(msg, 'OK', { duration: 3000 });
+      },
     });
   }
 

@@ -1,5 +1,15 @@
 import { DecimalPipe, UpperCasePipe } from '@angular/common';
 import { Component, HostListener, afterNextRender, computed, inject, signal } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatCardModule } from '@angular/material/card';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatSliderModule } from '@angular/material/slider';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Action, RobotService } from './robot.service';
 
 const KEYS: Record<string, Action> = {
@@ -13,7 +23,11 @@ const KEYS: Record<string, Action> = {
 
 @Component({
   selector: 'app-root',
-  imports: [DecimalPipe, UpperCasePipe],
+  imports: [
+    DecimalPipe, UpperCasePipe,
+    MatToolbarModule, MatCardModule, MatButtonModule, MatButtonToggleModule, MatIconModule,
+    MatSliderModule, MatSlideToggleModule, MatProgressBarModule, MatDividerModule, MatTooltipModule,
+  ],
   templateUrl: './app.html',
 })
 export class App {
@@ -24,6 +38,18 @@ export class App {
   protected readonly st = this.robot.state;
   protected readonly maxSpeed = computed(() => this.st()?.maxSpeed ?? 40);
   protected readonly ready = computed(() => this.robot.mqttConnected() && this.robot.robotOnline());
+  protected readonly safe = computed(() => this.st()?.mode !== 'manual');
+
+  protected readonly lightsDef = [
+    { port: 1, name: 'Caméra' },
+    { port: 2, name: 'Droite' },
+    { port: 3, name: 'Gauche' },
+  ];
+
+  /** Ports allumes, pour le groupe de boutons Material. */
+  protected readonly lightsOn = computed(() =>
+    this.lightsDef.filter((l) => this.st()?.lights?.[String(l.port)]).map((l) => l.port),
+  );
 
   /** Distance affichee sur une jauge 0-200 cm. */
   protected readonly gauge = computed(() => {
@@ -88,10 +114,6 @@ export class App {
     }
   }
 
-  protected setSpeed(value: string): void {
-    this.speed.set(Number(value));
-  }
-
   protected commitSpeed(): void {
     this.robot.send('speed', { speed: this.speed() });
   }
@@ -108,11 +130,16 @@ export class App {
     this.robot.send('light', { port, on });
   }
 
-  protected toggleMode(): void {
-    this.robot.send('mode', { mode: this.st()?.mode === 'safe' ? 'manual' : 'safe' });
+  protected setMode(safe: boolean): void {
+    this.robot.send('mode', { mode: safe ? 'safe' : 'manual' });
   }
 
-  protected bar(v: number | undefined): number {
+  protected axisValue(axis: string): number | null {
+    const i = this.robot.imu();
+    return i ? (i as unknown as Record<string, number>)[axis] : null;
+  }
+
+  protected bar(v: number | null): number {
     // accelerometre : +/- 12 m/s2 -> 0..100 %
     return Math.max(0, Math.min(100, 50 + ((v ?? 0) / 12) * 50));
   }
