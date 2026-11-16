@@ -4,7 +4,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 
 export type Action =
   | 'forward' | 'backward' | 'stop' | 'left' | 'right' | 'center'
-  | 'speed' | 'camera' | 'camera_center' | 'light' | 'mode';
+  | 'speed' | 'look_left' | 'look_right' | 'look_up' | 'look_down' | 'camera_center'
+  | 'light' | 'mode';
 
 export interface CommandParams {
   speed?: number;

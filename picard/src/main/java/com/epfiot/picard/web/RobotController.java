@@ -23,7 +23,8 @@ public class RobotController {
 
     private static final Set<String> ACTIONS = Set.of(
             "forward", "backward", "stop", "left", "right", "center",
-            "speed", "camera", "camera_center", "light", "mode");
+            "speed", "look_left", "look_right", "look_up", "look_down", "camera_center",
+            "light", "mode");
     private static final Set<String> MODES = Set.of("safe", "manual");
 
     private final MqttBridge mqtt;

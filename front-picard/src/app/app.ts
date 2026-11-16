@@ -33,7 +33,6 @@ const KEYS: Record<string, Action> = {
 export class App {
   protected readonly robot = inject(RobotService);
   protected readonly speed = signal(25);
-  protected readonly camStep = 10;
 
   protected readonly st = this.robot.state;
   protected readonly maxSpeed = computed(() => this.st()?.maxSpeed ?? 40);
@@ -116,13 +115,6 @@ export class App {
 
   protected commitSpeed(): void {
     this.robot.send('speed', { speed: this.speed() });
-  }
-
-  protected camera(dPan: number, dTilt: number): void {
-    const s = this.st();
-    const pan = Math.max(0, Math.min(180, (s?.pan ?? 90) + dPan));
-    const tilt = Math.max(0, Math.min(180, (s?.tilt ?? 90) + dTilt));
-    this.robot.send('camera', { pan, tilt });
   }
 
   protected light(port: number): void {

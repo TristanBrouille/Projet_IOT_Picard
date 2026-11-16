@@ -152,11 +152,11 @@
     </mat-card-header>
     <mat-card-content>
       <div class="campad">
-        <button mat-icon-button class="c-up" (click)="camera(0, camStep)" aria-label="Caméra haut"><mat-icon svgIcon="chev-up" /></button>
-        <button mat-icon-button class="c-left" (click)="camera(camStep, 0)" aria-label="Caméra gauche"><mat-icon svgIcon="chev-left" /></button>
+        <button mat-icon-button class="c-up" (click)="cmd('look_up')" aria-label="Caméra haut"><mat-icon svgIcon="chev-up" /></button>
+        <button mat-icon-button class="c-left" (click)="cmd('look_left')" aria-label="Caméra gauche"><mat-icon svgIcon="chev-left" /></button>
         <button mat-flat-button class="c-mid" (click)="cmd('camera_center')" aria-label="Centrer la caméra"><mat-icon svgIcon="target" /></button>
-        <button mat-icon-button class="c-right" (click)="camera(-camStep, 0)" aria-label="Caméra droite"><mat-icon svgIcon="chev-right" /></button>
-        <button mat-icon-button class="c-down" (click)="camera(0, -camStep)" aria-label="Caméra bas"><mat-icon svgIcon="chev-down" /></button>
+        <button mat-icon-button class="c-right" (click)="cmd('look_right')" aria-label="Caméra droite"><mat-icon svgIcon="chev-right" /></button>
+        <button mat-icon-button class="c-down" (click)="cmd('look_down')" aria-label="Caméra bas"><mat-icon svgIcon="chev-down" /></button>
       </div>
 
       <mat-divider />
